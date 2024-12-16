@@ -5,7 +5,7 @@
 #include <optional>
 
 namespace velvet::dvd {
-	[[nodiscard]] void *LoadFile(const std::string &path, s32 priority = 2);
+	[[nodiscard]] std::optional<dvdfileinfo> LoadFile(const std::string &path, s32 priority = 2);
 
 	[[nodiscard]] bool LoadFileAsync(const std::string &path, dvdcbcallback doneCallback, s32 priority = 2);
 

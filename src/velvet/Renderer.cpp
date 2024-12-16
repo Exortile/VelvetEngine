@@ -1,9 +1,14 @@
 #include "Renderer.hpp"
+#include "velvet/core/Engine.hpp"
+#include "velvet/core/vtx/VtxFormat.hpp"
 
 #include <array>
 #include <gctypes.h>
+#include <stdexcept>
 
 namespace {
+	using namespace velvet;
+
 	constinit std::array<s16, 24> CubePositions alignas(32) = {
 			// x y z
 			-1, 1,	-1, // 0
@@ -25,50 +30,88 @@ namespace {
 			10,	 120, 40,  255, // 4 green
 			0,	 20,  100, 255	// 5 blue
 	};
-} // namespace
 
-namespace velvet {
-	void Renderer::SetVtxFormat(const std::span<velvet::core::vtx::VtxDescription> &format, GXVtxFmt vtxfmt) {
-		GX_ClearVtxDesc();
+	const core::vtx::VtxFormat VtxFormatTex(
+			{
+					core::vtx::VtxDescription(GX_VA_POS, GX_INDEX8, GX_POS_XYZ, GX_S16),
+					//			core::vtx::VtxDescription(GX_VA_CLR0, GX_INDEX8, GX_CLR_RGBA, GX_RGBA8),
+					core::vtx::VtxDescription(GX_VA_TEX0, GX_DIRECT, GX_TEX_ST, GX_F32),
+			},
+			GX_VTXFMT0);
 
-		for (const auto &attributes: format) {
-			GX_SetVtxDesc(attributes.desc.attr, attributes.desc.type);
-			GX_SetVtxAttrFmt(vtxfmt, attributes.desc.attr, attributes.fmt.type, attributes.fmt.size, 0);
-		}
+	const core::vtx::VtxFormat VtxFormatColor(
+			{
+					core::vtx::VtxDescription(GX_VA_POS, GX_INDEX8, GX_POS_XYZ, GX_S16),
+					core::vtx::VtxDescription(GX_VA_CLR0, GX_INDEX8, GX_CLR_RGBA, GX_RGBA8),
+					//					core::vtx::VtxDescription(GX_VA_TEX0, GX_DIRECT, GX_TEX_ST, GX_F32),
+			},
+			GX_VTXFMT1);
+
+	void SetVtxFormatAndDesc(const core::vtx::VtxFormat &vtxFormat) {
+		vtxFormat.Apply();
 	}
 
-	inline void Renderer::DrawQuadIndexed(u8 p0, u8 p1, u8 p2, u8 p3, u8 c0) {
+	void DrawTexturedQuadIndexed(u8 p0, u8 p1, u8 p2, u8 p3) {
 		GX_Position1x8(p0);
 		GX_TexCoord2f32(0, 0);
-//		GX_Color1x8(c0);
 
 		GX_Position1x8(p1);
 		GX_TexCoord2f32(1, 0);
-//		GX_Color1x8(c0);
 
 		GX_Position1x8(p2);
 		GX_TexCoord2f32(1, 1);
-//		GX_Color1x8(c0);
 
 		GX_Position1x8(p3);
 		GX_TexCoord2f32(0, 1);
-//		GX_Color1x8(c0);
 	}
 
-	void Renderer::DrawCube(const guVector &translation, const guVector &rotAxis, const f32 rotation) {
+	void DrawColoredQuadIndexed(u8 p0, u8 p1, u8 p2, u8 p3, u8 c0) {
+		GX_Position1x8(p0);
+		GX_Color1x8(c0);
+
+		GX_Position1x8(p1);
+		GX_Color1x8(c0);
+
+		GX_Position1x8(p2);
+		GX_Color1x8(c0);
+
+		GX_Position1x8(p3);
+		GX_Color1x8(c0);
+	}
+} // namespace
+
+namespace velvet::renderer {
+	XfbData gXfbData{};
+
+	void BeginDraw() {
+		GX_InvVtxCache();
+		GX_InvalidateTexAll();
+	}
+
+	void EndDraw() {
+		auto &[currFb, xfb] = gXfbData;
+
+		GX_DrawDone();
+		GX_CopyDisp(xfb[currFb], GX_TRUE);
+
+		VIDEO_SetNextFramebuffer(xfb[currFb]);
+		VIDEO_Flush();
+		VIDEO_WaitVSync();
+
+		currFb ^= 1;
+	}
+
+	void DrawColoredCube(const guVector &translation, const guVector &rotAxis, const f32 rotation) {
+		SetVtxFormatAndDesc(VtxFormatColor);
+
 		GX_SetNumChans(1);
 
-		GX_SetNumTexGens(1);
-		GX_SetTevOp(GX_TEVSTAGE0, GX_REPLACE);
-		GX_SetTevOrder(GX_TEVSTAGE0, GX_TEXCOORD0, GX_TEXMAP0, GX_COLOR0A0);
-		GX_SetTexCoordGen(GX_TEXCOORD0, GX_TG_MTX2x4, GX_TG_TEX0, GX_IDENTITY);
-
-		/*GX_SetNumTexGens(0);
+		GX_SetNumTexGens(0);
 		GX_SetTevOrder(GX_TEVSTAGE0, GX_TEXCOORDNULL, GX_TEXMAP_NULL, GX_COLOR0A0);
-		GX_SetTevOp(GX_TEVSTAGE0, GX_PASSCLR);*/
+		GX_SetTevOp(GX_TEVSTAGE0, GX_PASSCLR);
 
 		GX_SetArray(GX_VA_POS, CubePositions.data(), 3 * sizeof(s16));
-//		GX_SetArray(GX_VA_CLR0, CubeColors.data(), 4 * sizeof(u8));
+		GX_SetArray(GX_VA_CLR0, CubeColors.data(), 4 * sizeof(u8));
 
 		Mtx model;
 		guMtxIdentity(model);
@@ -76,24 +119,55 @@ namespace velvet {
 		guMtxTransApply(model, model, translation.x, translation.y, translation.z);
 
 		Mtx modelView;
-		guMtxConcat(_camera.GetViewMatrix(), model, modelView);
+		guMtxConcat(core::gMainCamera.GetViewMatrix(), model, modelView);
 
 		GX_LoadPosMtxImm(modelView, GX_PNMTX0);
 		GX_SetCurrentMtx(GX_PNMTX0);
 
-		GX_Begin(GX_QUADS, GX_VTXFMT0, 24);
+		GX_Begin(GX_QUADS, VtxFormatColor.vtxfmt, 24);
 
-		DrawQuadIndexed(0, 3, 2, 1, 0);
-		DrawQuadIndexed(0, 7, 6, 3, 1);
-		DrawQuadIndexed(0, 1, 4, 7, 2);
-		DrawQuadIndexed(1, 2, 5, 4, 3);
-		DrawQuadIndexed(2, 3, 6, 5, 4);
-		DrawQuadIndexed(4, 7, 6, 5, 5);
+		DrawColoredQuadIndexed(0, 3, 2, 1, 0);
+		DrawColoredQuadIndexed(0, 7, 6, 3, 1);
+		DrawColoredQuadIndexed(0, 1, 4, 7, 2);
+		DrawColoredQuadIndexed(1, 2, 5, 4, 3);
+		DrawColoredQuadIndexed(2, 3, 6, 5, 4);
+		DrawColoredQuadIndexed(4, 7, 6, 5, 5);
 
 		GX_End();
 	}
 
-	void Renderer::Update() {
-		_camera.Update();
+	void DrawTexturedCube(const u8 texmap, const guVector &translation, const guVector &rotAxis, const f32 rotation) {
+		SetVtxFormatAndDesc(VtxFormatTex);
+
+		GX_SetNumChans(1);
+
+		GX_SetNumTexGens(1);
+		GX_SetTevOp(GX_TEVSTAGE0, GX_REPLACE);
+		GX_SetTevOrder(GX_TEVSTAGE0, GX_TEXCOORD0, texmap, GX_COLOR0A0);
+		GX_SetTexCoordGen(GX_TEXCOORD0, GX_TG_MTX2x4, GX_TG_TEX0, GX_IDENTITY);
+
+		GX_SetArray(GX_VA_POS, CubePositions.data(), 3 * sizeof(s16));
+
+		Mtx model;
+		guMtxIdentity(model);
+		guMtxRotAxisDeg(model, &rotAxis, rotation);
+		guMtxTransApply(model, model, translation.x, translation.y, translation.z);
+
+		Mtx modelView;
+		guMtxConcat(core::gMainCamera.GetViewMatrix(), model, modelView);
+
+		GX_LoadPosMtxImm(modelView, GX_PNMTX0);
+		GX_SetCurrentMtx(GX_PNMTX0);
+
+		GX_Begin(GX_QUADS, VtxFormatTex.vtxfmt, 24);
+
+		DrawTexturedQuadIndexed(0, 3, 2, 1);
+		DrawTexturedQuadIndexed(0, 7, 6, 3);
+		DrawTexturedQuadIndexed(0, 1, 4, 7);
+		DrawTexturedQuadIndexed(1, 2, 5, 4);
+		DrawTexturedQuadIndexed(2, 3, 6, 5);
+		DrawTexturedQuadIndexed(4, 7, 6, 5);
+
+		GX_End();
 	}
-} // namespace velvet
+} // namespace velvet::renderer

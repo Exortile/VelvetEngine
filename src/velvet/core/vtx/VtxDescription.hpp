@@ -3,6 +3,7 @@
 #include <gccore.h>
 
 namespace velvet::core::vtx {
+
 	struct VtxDescription {
 		GXVtxDesc desc{};
 		struct {
@@ -10,11 +11,16 @@ namespace velvet::core::vtx {
 			u8 size;
 		} fmt{};
 
-		VtxDescription(u8 descAttr, u8 descType, u8 fmtType, u8 fmtSize) {
-			desc.attr = descAttr;
-			desc.type = descType;
-			fmt.type = fmtType;
-			fmt.size = fmtSize;
+		VtxDescription(u8 descAttr, u8 descType, u8 fmtType, u8 fmtSize) : desc(descAttr, descType), fmt(fmtType, fmtSize) {
+		}
+
+		void ApplyDescription() const {
+			GX_SetVtxDesc(desc.attr, desc.type);
+		}
+
+		void ApplyFormat(const u8 vtxfmt) const {
+			GX_SetVtxAttrFmt(vtxfmt, desc.attr, fmt.type, fmt.size, 0);
 		}
 	};
-}
+
+} // namespace velvet::core::vtx

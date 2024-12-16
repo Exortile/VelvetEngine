@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)     # Enforces the standard we set instead o
 set(CMAKE_CXX_EXTENSIONS ON)            # Enables the use of compiler-specific extensions
 
 set(WARNING_FLAGS
-        #-Werror    # Turns all warnings into errors # Would not recommend enabling unless you're planning to fix *every* warning
+        -Werror    # Turns all warnings into errors
         -Wall   # Enable most warning messages.
         -Wextra # Print extra (possibly unwanted) warnings.
         #-Wpedantic # Issue warnings needed for strict compliance to the standard. # We'll probably never need this
@@ -34,7 +34,7 @@ set(WARNING_FLAGS
         -Wundef # Warn if an undefined macro is used in an #if directive.
         -Wzero-as-null-pointer-constant # Warn when a literal '0' is used as null pointer.
         -Wuseless-cast  # Warn about useless casts.
-        -Wpadded # Warn when padding is required to align structure members.
+        # -Wpadded # Warn when padding is required to align structure members.
         -Wdouble-promotion
 
         -Wno-unknown-pragmas # Disables warning about unkown pragmas since both clion and clang-tidy use their own
@@ -70,7 +70,7 @@ include_directories(SYSTEM ${DEVKITPRO}/portlibs/ppc/include)
 link_directories(${LIBOGC_PATH}/lib/cuberiders)
 link_directories(${DEVKITPRO}/portlibs/ppc/lib)
 
-add_link_options(-T ${STATICLCF}#[[/devkitPPC/powerpc-eabi/lib/ogc.ld]] -Wl,-Map=main.map,--gc-sections,-d)
+add_link_options(-T ${STATICLCF} -Wl,-Map=main.map,--gc-sections,-d)
 # libogc and libm get linked by toolchain file
 # link_libraries(ogc m)
 include_directories(src include)
@@ -81,8 +81,8 @@ add_compile_options(${WARNING_FLAGS}
 )
 add_executable(main
         main.cpp
-        src/velvet/core/Engine.cpp
-        src/velvet/core/Engine.hpp
+        src/velvet/core/Core.cpp
+        src/velvet/core/Core.hpp
         src/velvet/core/vtx/VtxDescription.hpp
         src/velvet/Renderer.cpp
         src/velvet/Renderer.hpp
@@ -95,11 +95,18 @@ add_executable(main
         src/velvet/input/Controller.hpp
         src/velvet/input/Input.cpp
         src/velvet/input/Input.hpp
+        src/velvet/core/vtx/VtxFormat.hpp
+        src/velvet/core/Engine.cpp
+        src/velvet/core/Engine.hpp
 )
 
 function(create_dol target)
+    __dkp_target_derive_name(DOL_OUTPUT ${target} ".dol")
     ogc_create_dol(${target})
     add_custom_command(TARGET ${target} POST_BUILD COMMAND ${Python_EXECUTABLE} ${PARSEMAPPY} ${PROJECT_BINARY_DIR})
+    if (DEFINED GAME_PATH)
+        add_custom_command(TARGET ${target} POST_BUILD COMMAND cmake -E copy_if_different "${DOL_OUTPUT}" "${GAME_PATH}/sys/")
+    endif ()
 endfunction()
 
 create_dol(main)
