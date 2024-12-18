@@ -11,7 +11,7 @@ namespace velvet::core::vtx {
 			u8 size;
 		} fmt{};
 
-		VtxDescription(u8 descAttr, u8 descType, u8 fmtType, u8 fmtSize) : desc(descAttr, descType), fmt(fmtType, fmtSize) {
+		VtxDescription(u8 descAttr, u8 descType, u8 fmtType, u8 fmtSize) noexcept : desc(descAttr, descType), fmt(fmtType, fmtSize) {
 		}
 
 		void ApplyDescription() const {

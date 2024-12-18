@@ -59,6 +59,30 @@ namespace {
 		vtxFormat.Apply();
 	}
 
+	void SetVObjVtxFormat(const formats::VObject &vobj) {
+		std::vector<core::vtx::VtxDescription> vtxFormat;
+
+		vtxFormat.emplace_back(GX_VA_POS, GX_INDEX16, GX_POS_XYZ, GX_F32);
+		GX_SetArray(GX_VA_POS, vobj.vertexData->positions, 3 * sizeof(f32));
+
+		if (vobj.hasNormals) {
+			vtxFormat.emplace_back(GX_VA_NRM, GX_INDEX16, GX_NRM_XYZ, GX_F32);
+			GX_SetArray(GX_VA_NRM, vobj.vertexData->normals, 3 * sizeof(f32));
+		}
+
+		if (vobj.hasColors) {
+			vtxFormat.emplace_back(GX_VA_CLR0, GX_INDEX16, GX_CLR_RGB, GX_RGB8);
+			GX_SetArray(GX_VA_CLR0, vobj.vertexData->colors, 3 * sizeof(u8));
+		}
+
+		if (vobj.hasUVs) {
+			vtxFormat.emplace_back(GX_VA_TEX0, GX_INDEX16, GX_TEX_ST, GX_F32);
+			GX_SetArray(GX_VA_TEX0, vobj.vertexData->uvs, 2 * sizeof(f32));
+		}
+
+		core::vtx::VtxFormat(vtxFormat, GX_VTXFMT0).Apply();
+	}
+
 	void DrawTexturedQuadIndexed(u8 p0, u8 p1, u8 p2, u8 p3) {
 		GX_Position1x8(p0);
 		GX_TexCoord2f32(0, 0);
@@ -179,13 +203,8 @@ namespace velvet::renderer {
 		GX_End();
 	}
 
-	void DrawTexturedVObj(
-			[[maybe_unused]] const formats::VObject &vobj,
-			[[maybe_unused]] const u8 texmap,
-			[[maybe_unused]] const guVector &translation,
-			[[maybe_unused]] const guVector &rotAxis,
-			[[maybe_unused]] const f32 rotation) {
-		SetVtxFormatAndDesc(VtxFormatVobj);
+	void DrawTexturedVObj(const formats::VObject &vobj, const u8 texmap, const guVector &translation, const guVector &rotAxis, const f32 rotation) {
+		SetVObjVtxFormat(vobj);
 
 		GX_SetNumChans(1);
 
@@ -193,10 +212,6 @@ namespace velvet::renderer {
 		GX_SetTevOp(GX_TEVSTAGE0, GX_REPLACE);
 		GX_SetTevOrder(GX_TEVSTAGE0, GX_TEXCOORD0, texmap, GX_COLOR0A0);
 		GX_SetTexCoordGen(GX_TEXCOORD0, GX_TG_MTX2x4, GX_TG_TEX0, GX_IDENTITY);
-
-		GX_SetArray(GX_VA_POS, vobj.vertexData->positions, 3 * sizeof(f32));
-		GX_SetArray(GX_VA_NRM, vobj.vertexData->normals, 3 * sizeof(f32));
-		GX_SetArray(GX_VA_TEX0, vobj.vertexData->uvs, 2 * sizeof(f32));
 
 		Mtx model;
 		guMtxIdentity(model);
