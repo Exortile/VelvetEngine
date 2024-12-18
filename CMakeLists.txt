@@ -98,6 +98,10 @@ add_executable(main
         src/velvet/core/vtx/VtxFormat.hpp
         src/velvet/core/Engine.cpp
         src/velvet/core/Engine.hpp
+        src/velvet/core/loaders/ModelLoader.cpp
+        src/velvet/core/loaders/ModelLoader.hpp
+        src/velvet/formats/VObject.hpp
+        src/velvet/formats/VelvetCommon.hpp
 )
 
 function(create_dol target)

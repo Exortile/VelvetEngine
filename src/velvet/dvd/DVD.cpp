@@ -4,9 +4,9 @@
 // TODO: Implement searching files through directories in libogc, right now only files that are in the root directory are found.
 
 namespace velvet::dvd {
-	[[nodiscard]] std::optional<dvdfileinfo> LoadFile(const std::string &path, s32 priority) {
+	[[nodiscard]] std::optional<dvdfileinfo> LoadFile(const char *path, s32 priority) {
 		dvdfileinfo fileInfo;
-		if (!DVD_Open(path.c_str(), &fileInfo))
+		if (!DVD_Open(path, &fileInfo))
 			return std::nullopt;
 
 		auto buf = memalign(32, fileInfo.len);
@@ -16,9 +16,9 @@ namespace velvet::dvd {
 		return fileInfo;
 	}
 
-	[[nodiscard]] bool LoadFileAsync(const std::string &path, dvdcbcallback doneCallback, const s32 priority) {
+	[[nodiscard]] bool LoadFileAsync(const char *path, dvdcbcallback doneCallback, s32 priority) {
 		dvdfileinfo fileInfo;
-		if (!DVD_Open(path.c_str(), &fileInfo))
+		if (!DVD_Open(path, &fileInfo))
 			return false;
 
 		auto buf = memalign(32, fileInfo.len);
@@ -27,9 +27,9 @@ namespace velvet::dvd {
 		return true;
 	}
 
-	[[nodiscard]] std::optional<u32> GetFileLength(const std::string &path) {
+	[[nodiscard]] std::optional<u32> GetFileLength(const char *path) {
 		dvdfileinfo info;
-		if (!DVD_Open(path.c_str(), &info))
+		if (!DVD_Open(path, &info))
 			return std::nullopt;
 
 		return info.len;

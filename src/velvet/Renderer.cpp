@@ -47,6 +47,14 @@ namespace {
 			},
 			GX_VTXFMT1);
 
+	const core::vtx::VtxFormat VtxFormatVobj(
+			{
+					core::vtx::VtxDescription(GX_VA_POS, GX_INDEX8, GX_POS_XYZ, GX_F32),
+					core::vtx::VtxDescription(GX_VA_NRM, GX_INDEX8, GX_NRM_XYZ, GX_F32),
+					core::vtx::VtxDescription(GX_VA_TEX0, GX_INDEX8, GX_TEX_ST, GX_F32),
+			},
+			GX_VTXFMT0);
+
 	void SetVtxFormatAndDesc(const core::vtx::VtxFormat &vtxFormat) {
 		vtxFormat.Apply();
 	}
@@ -169,5 +177,40 @@ namespace velvet::renderer {
 		DrawTexturedQuadIndexed(4, 7, 6, 5);
 
 		GX_End();
+	}
+
+	void DrawTexturedVObj(
+			[[maybe_unused]] const formats::VObject &vobj,
+			[[maybe_unused]] const u8 texmap,
+			[[maybe_unused]] const guVector &translation,
+			[[maybe_unused]] const guVector &rotAxis,
+			[[maybe_unused]] const f32 rotation) {
+		SetVtxFormatAndDesc(VtxFormatVobj);
+
+		GX_SetNumChans(1);
+
+		GX_SetNumTexGens(1);
+		GX_SetTevOp(GX_TEVSTAGE0, GX_REPLACE);
+		GX_SetTevOrder(GX_TEVSTAGE0, GX_TEXCOORD0, texmap, GX_COLOR0A0);
+		GX_SetTexCoordGen(GX_TEXCOORD0, GX_TG_MTX2x4, GX_TG_TEX0, GX_IDENTITY);
+
+		GX_SetArray(GX_VA_POS, vobj.vertexData->positions, 3 * sizeof(f32));
+		GX_SetArray(GX_VA_NRM, vobj.vertexData->normals, 3 * sizeof(f32));
+		GX_SetArray(GX_VA_TEX0, vobj.vertexData->uvs, 2 * sizeof(f32));
+
+		Mtx model;
+		guMtxIdentity(model);
+		guMtxRotAxisDeg(model, &rotAxis, rotation);
+		guMtxTransApply(model, model, translation.x, translation.y, translation.z);
+
+		Mtx modelView;
+		guMtxConcat(core::gMainCamera.GetViewMatrix(), model, modelView);
+		GX_LoadPosMtxImm(modelView, GX_PNMTX0);
+
+		Mtx normalMatrix;
+		guMtxInvXpose(modelView, normalMatrix);
+		GX_LoadNrmMtxImm(normalMatrix, GX_PNMTX0);
+
+		GX_CallDispList(vobj.displayList, vobj.displayListSize);
 	}
 } // namespace velvet::renderer
