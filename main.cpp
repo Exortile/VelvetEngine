@@ -8,6 +8,7 @@
 #include "velvet/core/loaders/TextureLoader.hpp"
 #include "velvet/dvd/DVD.hpp"
 #include "velvet/input/Input.hpp"
+#include "velvet/math/Quaternion.hpp"
 
 [[noreturn]] s32 main() {
 	using namespace velvet;
@@ -17,12 +18,7 @@
 	auto texturesTpl = core::loaders::LoadTPL("textures.tpl");
 	auto skyboxTpl = core::loaders::LoadTPL("skybox.tpl");
 
-	DVD_ChangeDir("models");
-
-	auto cubeFile = dvd::LoadFile("cube.vobj").value();
-	[[maybe_unused]] const auto cubeVobj = core::loaders::InitVOBJ(dvd::GetFileBuffer(cubeFile));
-
-	auto monkeyFile = dvd::LoadFile("aiai.vobj").value();
+	auto monkeyFile = dvd::LoadFile("models/aiai.vobj").value();
 	const auto monkeyVobj = core::loaders::InitVOBJ(dvd::GetFileBuffer(monkeyFile));
 
 	for (;;) {
@@ -37,15 +33,15 @@
 		core::loaders::LoadTexFromTPL(texturesTpl, 1, GX_TEXMAP1);
 		core::loaders::LoadTexFromTPL(texturesTpl, 2, GX_TEXMAP2);
 
-		renderer::SetLight({0.f, 0.5f, -1.f}, 100.f, {255, 255, 255, 255});
+		renderer::SetLight({0.f, 0.5f, 1.f}, 100.f, {255, 255, 255, 255});
 		renderer::SetMaterial({255, 255, 255, 255}, {16, 16, 16, 255});
 		renderer::SetTexture(GX_TEXMAP2, true);
 
 		//		static f32 rot = 0;
 
-		renderer::DrawTexturedVObj(*monkeyVobj.value(), {0, 0, 0}, {0, 1, 0}, 180.f);
-		//		renderer::DrawTexturedVObj(*cubeVobj.value(), {0, -3, -2}, {-1, 1, 0}, 0.f);
-		//		renderer::DrawTexturedVObj(*cubeVobj.value(), {0, -3, -5}, {-1, 1, 0}, 0.f);
+		renderer::DrawTexturedVObj(
+				*monkeyVobj.value(),
+				{.translation = {0, 0, 0}, .scale = {2, 2, 2}});
 
 		// Draw skybox
 

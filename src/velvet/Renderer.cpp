@@ -1,5 +1,6 @@
 #include "Renderer.hpp"
 #include "velvet/core/Engine.hpp"
+#include "velvet/core/Transform.hpp"
 #include "velvet/core/vtx/VtxFormat.hpp"
 #include "velvet/math/Matrix.hpp"
 
@@ -176,7 +177,7 @@ namespace velvet::renderer {
 		currFb ^= 1;
 	}
 
-	void DrawColoredCube(const guVector &translation, const guVector &rotAxis, const f32 rotation) {
+	void DrawColoredCube(const core::Transform &transform) {
 		SetVtxFormatAndDesc(VtxFormatColor);
 
 		GX_SetNumChans(1);
@@ -188,13 +189,9 @@ namespace velvet::renderer {
 		GX_SetArray(GX_VA_POS, CubePositions.data(), 3 * sizeof(s16));
 		GX_SetArray(GX_VA_CLR0, CubeColors.data(), 4 * sizeof(u8));
 
-		Mtx model;
-		guMtxIdentity(model);
-		guMtxRotAxisDeg(model, &rotAxis, rotation);
-		guMtxTransApply(model, model, translation.x, translation.y, translation.z);
-
 		Mtx modelView;
-		guMtxConcat(core::gMainCamera.GetViewMatrix(), model, modelView);
+		transform.toModelMatrix(modelView);
+		guMtxConcat(core::gMainCamera.GetViewMatrix(), modelView, modelView);
 
 		GX_LoadPosMtxImm(modelView, GX_PNMTX0);
 		GX_SetCurrentMtx(GX_PNMTX0);
@@ -211,11 +208,7 @@ namespace velvet::renderer {
 		GX_End();
 	}
 
-	void DrawTexturedCube(
-			const u8 texmap,
-			const guVector &translation,
-			const guVector &rotAxis,
-			const f32 rotation) {
+	void DrawTexturedCube(const u8 texmap, const core::Transform &transform) {
 		SetVtxFormatAndDesc(VtxFormatTex);
 
 		GX_SetNumChans(1);
@@ -227,13 +220,9 @@ namespace velvet::renderer {
 
 		GX_SetArray(GX_VA_POS, CubePositions.data(), 3 * sizeof(s16));
 
-		Mtx model;
-		guMtxIdentity(model);
-		guMtxRotAxisDeg(model, &rotAxis, rotation);
-		guMtxTransApply(model, model, translation.x, translation.y, translation.z);
-
 		Mtx modelView;
-		guMtxConcat(core::gMainCamera.GetViewMatrix(), model, modelView);
+		transform.toModelMatrix(modelView);
+		guMtxConcat(core::gMainCamera.GetViewMatrix(), modelView, modelView);
 
 		GX_LoadPosMtxImm(modelView, GX_PNMTX0);
 		GX_SetCurrentMtx(GX_PNMTX0);
@@ -308,20 +297,13 @@ namespace velvet::renderer {
 		GX_SetZCompLoc(GX_TRUE);
 	}
 
-	void DrawTexturedVObj(
-			const formats::VObject &vobj,
-			const guVector &translation,
-			const guVector &rotAxis,
-			const f32 rotation) {
+	void DrawTexturedVObj(const formats::VObject &vobj, const core::Transform &transform) {
 		SetVObjVtxFormat(vobj);
 
-		Mtx model;
-		guMtxIdentity(model);
-		guMtxRotAxisDeg(model, &rotAxis, rotation);
-		guMtxTransApply(model, model, translation.x, translation.y, translation.z);
-
 		Mtx modelView;
-		guMtxConcat(core::gMainCamera.GetViewMatrix(), model, modelView);
+		transform.toModelMatrix(modelView);
+		guMtxConcat(core::gMainCamera.GetViewMatrix(), modelView, modelView);
+
 		GX_LoadPosMtxImm(modelView, GX_PNMTX0);
 
 		Mtx normalMatrix;

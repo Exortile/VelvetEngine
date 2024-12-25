@@ -1,14 +1,14 @@
 #include "Camera.hpp"
-#include "velvet/input/Input.hpp"
-#include <cmath>
 #include <algorithm>
+#include <cmath>
+#include "velvet/input/Input.hpp"
 
 namespace velvet {
 	Camera::Camera() {
 		UpdateViewMatrix();
 	}
 
-	Mtx44 &Camera::GetViewMatrix() {
+	Mtx &Camera::GetViewMatrix() {
 		return _view;
 	}
 
@@ -48,8 +48,7 @@ namespace velvet {
 		_front = {
 				.x = std::cos(DegToRad(_yaw)) * std::cos(DegToRad(_pitch)),
 				.y = std::sin(DegToRad(_pitch)),
-				.z = std::sin(DegToRad(_yaw)) * std::cos(DegToRad(_pitch))
-		};
+				.z = std::sin(DegToRad(_yaw)) * std::cos(DegToRad(_pitch))};
 		guVecNormalize(&_front);
 		guVecAdd(&_pos, &_front, &target);
 		guLookAt(_view, &_pos, &_up, &target);

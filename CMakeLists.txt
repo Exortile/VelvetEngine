@@ -106,6 +106,9 @@ add_executable(main
         src/velvet/core/loaders/TextureLoader.hpp
         src/velvet/math/Matrix.cpp
         src/velvet/math/Matrix.hpp
+        src/velvet/core/Transform.hpp
+        src/velvet/math/Quaternion.cpp
+        src/velvet/math/Quaternion.hpp
 )
 
 function(create_dol target)

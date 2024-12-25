@@ -3,6 +3,7 @@
 #include <gccore.h>
 #include <span>
 #include "velvet/Camera.hpp"
+#include "velvet/core/Transform.hpp"
 #include "velvet/core/vtx/VtxFormat.hpp"
 #include "velvet/formats/VObject.hpp"
 
@@ -27,10 +28,10 @@ namespace velvet::renderer {
 
 	void DrawSkybox();
 
-	void DrawColoredCube(const guVector &translation, const guVector &rotAxis, const f32 rotation);
-	void DrawTexturedCube(const u8 texmap, const guVector &translation, const guVector &rotAxis, const f32 rotation);
+	void DrawColoredCube(const core::Transform &transform);
+	void DrawTexturedCube(const u8 texmap, const core::Transform &transform);
 
-	void DrawTexturedVObj(const formats::VObject &vobj, const guVector &translation, const guVector &rotAxis, const f32 rotation);
+	void DrawTexturedVObj(const formats::VObject &vobj, const core::Transform &transform);
 
 	void SetLight(const guVector &position, f32 brightness, const GXColor &color);
 	void SetNoLight();
