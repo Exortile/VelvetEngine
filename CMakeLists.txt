@@ -1,5 +1,5 @@
-cmake_minimum_required(VERSION 3.28)
-project(VelvetEngine)
+cmake_minimum_required(VERSION 3.13)
+project(VelvetEngine CXX)
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)     # Enforces the standard we set instead of silently using an older standard if not available
@@ -102,6 +102,10 @@ add_executable(main
         src/velvet/core/loaders/ModelLoader.hpp
         src/velvet/formats/VObject.hpp
         src/velvet/formats/VelvetCommon.hpp
+        src/velvet/core/loaders/TextureLoader.cpp
+        src/velvet/core/loaders/TextureLoader.hpp
+        src/velvet/math/Matrix.cpp
+        src/velvet/math/Matrix.hpp
 )
 
 function(create_dol target)

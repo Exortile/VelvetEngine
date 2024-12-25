@@ -27,11 +27,11 @@ namespace velvet::dvd {
 		return true;
 	}
 
-	[[nodiscard]] std::optional<u32> GetFileLength(const char *path) {
-		dvdfileinfo info;
-		if (!DVD_Open(path, &info))
-			return std::nullopt;
+	[[nodiscard]] u32 GetFileLength(const dvdfileinfo &file) {
+		return file.len;
+	}
 
-		return info.len;
+	void *GetFileBuffer(const dvdfileinfo &file) {
+		return file.block.buf;
 	}
 } // namespace velvet::dvd

@@ -9,5 +9,7 @@ namespace velvet::dvd {
 
 	[[nodiscard]] bool LoadFileAsync(const char *path, dvdcbcallback doneCallback, s32 priority = 2);
 
-	[[nodiscard]] std::optional<u32> GetFileLength(const char *path);
+	[[nodiscard]] u32 GetFileLength(const dvdfileinfo &file);
+
+	[[nodiscard]] void *GetFileBuffer(const dvdfileinfo &file);
 } // namespace velvet::dvd

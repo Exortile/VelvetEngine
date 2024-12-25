@@ -14,13 +14,29 @@ namespace velvet::renderer {
 	};
 
 	extern XfbData gXfbData;
+	inline GXRModeObj *gGXRMode = nullptr;
+
+	inline void *gWhiteTexData = nullptr;
+	inline GXTexObj gWhiteZTexObj;
+
+	[[maybe_unused]] [[nodiscard]] u16 GetWidth();
+	[[maybe_unused]] [[nodiscard]] u16 GetHeight();
 
 	void BeginDraw();
 	void EndDraw();
 
+	void DrawSkybox();
+
 	void DrawColoredCube(const guVector &translation, const guVector &rotAxis, const f32 rotation);
 	void DrawTexturedCube(const u8 texmap, const guVector &translation, const guVector &rotAxis, const f32 rotation);
 
-	void DrawTexturedVObj(const formats::VObject &vobj, const u8 texmap, const guVector &translation, const guVector &rotAxis, const f32 rotation);
+	void DrawTexturedVObj(const formats::VObject &vobj, const guVector &translation, const guVector &rotAxis, const f32 rotation);
+
+	void SetLight(const guVector &position, f32 brightness, const GXColor &color);
+	void SetNoLight();
+
+	void SetMaterial(const GXColor &diffuseColor, const GXColor &ambientColor);
+
+	void SetTexture(const u8 texmap, const bool useLighting);
 
 } // namespace velvet::renderer

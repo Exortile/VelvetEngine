@@ -5,6 +5,7 @@
 #include "velvet/core/Core.hpp"
 #include "velvet/core/Engine.hpp"
 #include "velvet/core/loaders/ModelLoader.hpp"
+#include "velvet/core/loaders/TextureLoader.hpp"
 #include "velvet/dvd/DVD.hpp"
 #include "velvet/input/Input.hpp"
 
@@ -13,20 +14,16 @@
 
 	core::Init();
 
-	auto textureFile = velvet::dvd::LoadFile("textures.tpl").value();
-	TPLFile tplFile;
-	TPL_OpenTPLFromMemory(&tplFile, textureFile.block.buf, textureFile.len);
+	auto texturesTpl = core::loaders::LoadTPL("textures.tpl");
+	auto skyboxTpl = core::loaders::LoadTPL("skybox.tpl");
 
-	GXTexObj texObj;
+	DVD_ChangeDir("models");
 
-	TPL_GetTexture(&tplFile, 0, &texObj);
-	GX_LoadTexObj(&texObj, GX_TEXMAP0);
+	auto cubeFile = dvd::LoadFile("cube.vobj").value();
+	[[maybe_unused]] const auto cubeVobj = core::loaders::InitVOBJ(dvd::GetFileBuffer(cubeFile));
 
-	TPL_GetTexture(&tplFile, 1, &texObj);
-	GX_LoadTexObj(&texObj, GX_TEXMAP1);
-
-	auto cubeVobj = velvet::dvd::LoadFile("cube.vobj").value();
-	const auto vobj = core::loaders::InitVOBJ(cubeVobj.block.buf);
+	auto monkeyFile = dvd::LoadFile("aiai.vobj").value();
+	const auto monkeyVobj = core::loaders::InitVOBJ(dvd::GetFileBuffer(monkeyFile));
 
 	for (;;) {
 		input::UpdateControllers();
@@ -34,15 +31,30 @@
 
 		renderer::BeginDraw();
 
-		static f32 rot = 0;
+		// Draw everything
 
-		renderer::DrawTexturedVObj(*vobj.value(), GX_TEXMAP0, {0, 0, 0}, {-1, 1, 0}, rot);
-		renderer::DrawTexturedVObj(*vobj.value(), GX_TEXMAP1, {0, -3, -2}, {-1, 1, 0}, rot);
-		renderer::DrawTexturedVObj(*vobj.value(), GX_TEXMAP0, {0, -3, -5}, {-1, 1, 0}, rot);
+		core::loaders::LoadTexFromTPL(texturesTpl, 0, GX_TEXMAP0);
+		core::loaders::LoadTexFromTPL(texturesTpl, 1, GX_TEXMAP1);
+		core::loaders::LoadTexFromTPL(texturesTpl, 2, GX_TEXMAP2);
 
-		rot++;
+		renderer::SetLight({0.f, 0.5f, -1.f}, 100.f, {255, 255, 255, 255});
+		renderer::SetMaterial({255, 255, 255, 255}, {16, 16, 16, 255});
+		renderer::SetTexture(GX_TEXMAP2, true);
+
+		//		static f32 rot = 0;
+
+		renderer::DrawTexturedVObj(*monkeyVobj.value(), {0, 0, 0}, {0, 1, 0}, 180.f);
+		//		renderer::DrawTexturedVObj(*cubeVobj.value(), {0, -3, -2}, {-1, 1, 0}, 0.f);
+		//		renderer::DrawTexturedVObj(*cubeVobj.value(), {0, -3, -5}, {-1, 1, 0}, 0.f);
+
+		// Draw skybox
+
+		core::loaders::LoadCubemapTexture(skyboxTpl);
+		renderer::DrawSkybox();
+
+		/*rot++;
 		if (rot > 360.f)
-			rot = 0.f;
+			rot = 0.f;*/
 
 		renderer::EndDraw();
 	}
